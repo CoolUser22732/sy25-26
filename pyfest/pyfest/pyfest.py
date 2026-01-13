@@ -1,16 +1,13 @@
-# The initial lineup
-lineup = [
-    ("Good Charlotte", "punk rock", 30),
-    ("All American Rejects", "punk rock", 45),
-    ("Jimmy Eat World", "punk rock", 60)
-]
+print("\n---PyFest 2026 stage Manager ---")
+print("1. View Lineup & Total Time")
+print("2. Add a new band")
+print("3. Move first band to end")
+print("4. Remove a band by name")
+print("5. move band to specific position")
+print("6. Exit")
+choice = input("Choose an option (1-6): ")
+if choice == '1':
+    for artist in lineup:
+        for i, artist in enumerate(lineup):
 
-# 1. Add the headliner
-headliner = ("Yellowcard", "punk rock", 90)
-lineup.append(headliner)
-print(lineup)
-remove_band = lineup.pop(0)
-lineup.append(remove_band)
-print(lineup)
-
-# Continue the logic below...
+print ("---current lineup---")
