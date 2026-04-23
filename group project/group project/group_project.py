@@ -39,7 +39,7 @@ def parse_rating(tag):
     return "Unknown"
 
 # -------------------------------
-# Safe price parser (FIXED)
+# Price parser
 # -------------------------------
 def parse_price(price_text):
     try:
