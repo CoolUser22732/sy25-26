@@ -1,0 +1,3 @@
+Test 1: There was an issue where if you entered a book it could find on the website it would display most of the information but not all of it that it should have. Then if you entered a book title that isn't on there (Ex: book1234) It would display random information or the information from the book you previously searched for
+
+Test 2: The project shows more options now but it still doesn't work how it fully should but it tells the price and rating of the book now but no longer shows the amount left and for some reason there is a useless loading screen the search works fully though.
