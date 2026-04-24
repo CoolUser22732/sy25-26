@@ -1,3 +1,5 @@
 Test 1: There was an issue where if you entered a book it could find on the website it would display most of the information but not all of it that it should have. Then if you entered a book title that isn't on there (Ex: book1234) It would display random information or the information from the book you previously searched for
 
 Test 2: The project shows more options now but it still doesn't work how it fully should but it tells the price and rating of the book now but no longer shows the amount left and for some reason there is a useless loading screen the search works fully though.
+
+Test 3: The product looks completed but there are some issues. If you search by filter (ex: Highest price), it will only show 20 of them with no way to go to more books same with lowest price and all of the books so that will need to be fixed. Also the highest and lowest stock do not work so I think it will be fine without those either way since it doesn't help to much so PM will have to update it. 
