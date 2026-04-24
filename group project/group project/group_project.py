@@ -10,8 +10,10 @@ HEADERS = {
     "User-Agent": "Mozilla/5.0"
 }
 
+RATING_MAP = {"One": 1, "Two": 2, "Three": 3, "Four": 4, "Five": 5}
+
 # -------------------------------
-# Request helper (with retries)
+# Request helper
 # -------------------------------
 def get_soup(url, retries=3, delay=1):
     for attempt in range(retries):
@@ -27,38 +29,38 @@ def get_soup(url, retries=3, delay=1):
                 return None
 
 # -------------------------------
-# Rating parser
+# Parsers
 # -------------------------------
 def parse_rating(tag):
     if not tag:
         return "Unknown"
-    classes = tag.get("class", [])
-    for r in ["One", "Two", "Three", "Four", "Five"]:
-        if r in classes:
+    for r in RATING_MAP:
+        if r in tag.get("class", []):
             return r
     return "Unknown"
 
-# -------------------------------
-# Price parser
-# -------------------------------
 def parse_price(price_text):
     try:
         return float(re.sub(r"[^\d.]", "", price_text))
     except:
         return 0.0
 
+def parse_stock(text):
+    match = re.search(r"(\d+)", text)
+    return int(match.group(1)) if match else 0
+
 # -------------------------------
-# FAST scrape (no heavy requests)
+# Scrape (WITH PAGE LOADING UI)
 # -------------------------------
 def scrape_all_books():
     books_data = []
     page_url = BASE_URL
     page_count = 1
 
-    print("⏳ Loading books (fast mode)...")
+    print("⏳ Loading books (page by page)...\n")
 
     while page_url:
-        print(f"📄 Page {page_count}")
+        print(f"📄 Loading Page {page_count}...")
 
         soup = get_soup(page_url)
         if not soup:
@@ -83,69 +85,78 @@ def scrape_all_books():
                 "url": book_url
             })
 
+        print(f"   ✅ Page {page_count} loaded ({len(books)} books)\n")
+
         next_button = soup.select_one("li.next a")
         page_url = urljoin(page_url, next_button["href"]) if next_button else None
-        page_count += 1
 
-    print(f"✅ Loaded {len(books_data)} books.\n")
+        page_count += 1
+        time.sleep(0.2)
+
+    print(f"🎉 Finished loading {len(books_data)} books total!\n")
     return books_data
 
 # -------------------------------
-# Fetch full details (on demand)
+# Get details
 # -------------------------------
-def get_book_details(book_url):
-    soup = get_soup(book_url)
+def get_book_details(book):
+    soup = get_soup(book["url"])
     if not soup:
         return None
 
-    try:
-        availability = soup.select_one(".availability").text.strip()
-        description_tag = soup.select_one("#product_description ~ p")
-        description = description_tag.text.strip() if description_tag else "No description"
+    availability_text = soup.select_one(".availability").text.strip()
+    stock = parse_stock(availability_text)
 
-        return {
-            "availability": availability,
-            "description": description
-        }
-    except:
-        return None
+    return {
+        "title": book["title"],
+        "price": book["price"],
+        "rating": book["rating"],
+        "stock": stock
+    }
 
 # -------------------------------
-# Filters
+# Display list
 # -------------------------------
-def filter_books(books, title=None, rating=None, min_price=None, max_price=None):
-    results = books
-
-    if title:
-        results = [b for b in results if title.lower() in b["title"].lower()]
-
-    if rating:
-        results = [b for b in results if b["rating"].lower() == rating.lower()]
-
-    if min_price is not None:
-        results = [b for b in results if b["price"] >= min_price]
-
-    if max_price is not None:
-        results = [b for b in results if b["price"] <= max_price]
-
-    return results
-
-# -------------------------------
-# Display results
-# -------------------------------
-def display_results(results):
-    if not results:
-        print("\n❌ No books found. Returning to menu...")
+def display_list(books):
+    if not books:
+        print("\n❌ No books found.")
         return []
 
-    print(f"\n📚 Found {len(results)} books (showing up to 10):\n")
+    print(f"\n📚 Showing {min(len(books),20)} of {len(books)} books:\n")
 
-    for i, book in enumerate(results[:10], 1):
-        print(f"{i}. {book['title']}")
-        print(f"   💲 £{book['price']:.2f} | ⭐ {book['rating']}")
-        print(f"   🔗 {book['url']}\n")
+    for i, b in enumerate(books[:20], 1):
+        print(f"{i}. {b['title']}")
 
-    return results[:10]
+    return books[:20]
+
+# -------------------------------
+# Display details
+# -------------------------------
+def show_details(book):
+    details = get_book_details(book)
+    if not details:
+        print("❌ Could not fetch details.")
+        return
+
+    print("\n📖 DETAILS")
+    print(f"Title: {details['title']}")
+    print(f"Rating: {details['rating']}")
+    print(f"Price: £{details['price']:.2f}")
+    print(f"Amount left: {details['stock']}\n")
+
+# -------------------------------
+# Sorting helpers
+# -------------------------------
+def sort_by_rating(books, reverse=False):
+    return sorted(books, key=lambda x: RATING_MAP.get(x["rating"], 0), reverse=reverse)
+
+def sort_by_price(books, reverse=False):
+    return sorted(books, key=lambda x: x["price"], reverse=reverse)
+
+def sort_by_stock(books, reverse=False):
+    detailed = [(b, get_book_details(b)) for b in books]
+    detailed = [d for d in detailed if d[1]]
+    return [b for b, d in sorted(detailed, key=lambda x: x[1]["stock"], reverse=reverse)]
 
 # -------------------------------
 # Main menu
@@ -159,31 +170,57 @@ def main():
 
     while True:
         print("\n--- MENU ---")
-        print("1. Search by Title")
-        print("2. Filter by Rating")
-        print("3. Filter by Price Range")
-        print("4. Exit")
+        print("1. All books")
+        print("2. Books by starting letter")
+        print("3. Highest rating")
+        print("4. Lowest rating")
+        print("5. Lowest price")
+        print("6. Highest price")
+        print("7. Lowest stock")
+        print("8. Highest stock")
+        print("9. Search for exact title")
+        print("10. Exit")
 
-        choice = input("Choose an option: ").strip()
+        choice = input("Choose: ").strip()
 
         if choice == "1":
-            query = input("Enter title: ").strip()
-            results = filter_books(books, title=query)
+            results = books
 
         elif choice == "2":
-            rating = input("Enter rating (One–Five): ").strip()
-            results = filter_books(books, rating=rating)
+            letter = input("Enter letter: ").lower()
+            results = [b for b in books if b["title"].lower().startswith(letter)]
 
         elif choice == "3":
-            try:
-                min_p = float(input("Min price: ") or 0)
-                max_p = float(input("Max price: ") or 1000)
-            except ValueError:
-                print("Invalid price input.")
-                continue
-            results = filter_books(books, min_price=min_p, max_price=max_p)
+            results = sort_by_rating(books, reverse=True)
 
         elif choice == "4":
+            results = sort_by_rating(books)
+
+        elif choice == "5":
+            results = sort_by_price(books)
+
+        elif choice == "6":
+            results = sort_by_price(books, reverse=True)
+
+        elif choice == "7":
+            results = sort_by_stock(books)
+
+        elif choice == "8":
+            results = sort_by_stock(books, reverse=True)
+
+        elif choice == "9":
+            title = input("Enter exact title: ").strip()
+            results = [b for b in books if b["title"].lower() == title.lower()]
+
+            if not results:
+                print("\n❌ Book not found.")
+                print("Check spelling/capitalization or it may not be available.\n")
+                continue
+
+            show_details(results[0])
+            continue
+
+        elif choice == "10":
             print("👋 Goodbye!")
             break
 
@@ -191,24 +228,14 @@ def main():
             print("Invalid option.")
             continue
 
-        shown = display_results(results)
+        shown = display_list(results)
 
-        if not shown:
-            continue
-
-        # Optional: view details
-        view = input("Enter number to see details (or press Enter to skip): ").strip()
-
-        if view.isdigit():
-            idx = int(view) - 1
-            if 0 <= idx < len(shown):
-                details = get_book_details(shown[idx]["url"])
-                if details:
-                    print("\n📖 DETAILS:")
-                    print(f"Stock: {details['availability']}")
-                    print(f"Description: {details['description']}\n")
-                else:
-                    print("❌ Could not fetch details.")
+        if shown:
+            pick = input("Select a book number for details: ").strip()
+            if pick.isdigit():
+                idx = int(pick) - 1
+                if 0 <= idx < len(shown):
+                    show_details(shown[idx])
 
 if __name__ == "__main__":
     main()
