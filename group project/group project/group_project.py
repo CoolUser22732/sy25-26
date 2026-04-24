@@ -115,19 +115,19 @@ def get_book_details(book):
     }
 
 # -------------------------------
-# Display list
+# Display list (NO LIMIT NOW)
 # -------------------------------
 def display_list(books):
     if not books:
         print("\n❌ No books found.")
         return []
 
-    print(f"\n📚 Showing {min(len(books),20)} of {len(books)} books:\n")
+    print(f"\n📚 Showing ALL {len(books)} books:\n")
 
-    for i, b in enumerate(books[:20], 1):
+    for i, b in enumerate(books, 1):
         print(f"{i}. {b['title']}")
 
-    return books[:20]
+    return books
 
 # -------------------------------
 # Display details
@@ -150,9 +150,6 @@ def show_details(book):
 def sort_by_rating(books, reverse=False):
     return sorted(books, key=lambda x: RATING_MAP.get(x["rating"], 0), reverse=reverse)
 
-def sort_by_price(books, reverse=False):
-    return sorted(books, key=lambda x: x["price"], reverse=reverse)
-
 def sort_by_stock(books, reverse=False):
     detailed = [(b, get_book_details(b)) for b in books]
     detailed = [d for d in detailed if d[1]]
@@ -174,12 +171,10 @@ def main():
         print("2. Books by starting letter")
         print("3. Highest rating")
         print("4. Lowest rating")
-        print("5. Lowest price")
-        print("6. Highest price")
-        print("7. Lowest stock")
-        print("8. Highest stock")
-        print("9. Search for exact title")
-        print("10. Exit")
+        print("5. Lowest stock")
+        print("6. Highest stock")
+        print("7. Search for exact title")
+        print("8. Exit")
 
         choice = input("Choose: ").strip()
 
@@ -197,18 +192,12 @@ def main():
             results = sort_by_rating(books)
 
         elif choice == "5":
-            results = sort_by_price(books)
-
-        elif choice == "6":
-            results = sort_by_price(books, reverse=True)
-
-        elif choice == "7":
             results = sort_by_stock(books)
 
-        elif choice == "8":
+        elif choice == "6":
             results = sort_by_stock(books, reverse=True)
 
-        elif choice == "9":
+        elif choice == "7":
             title = input("Enter exact title: ").strip()
             results = [b for b in books if b["title"].lower() == title.lower()]
 
@@ -220,7 +209,7 @@ def main():
             show_details(results[0])
             continue
 
-        elif choice == "10":
+        elif choice == "8":
             print("👋 Goodbye!")
             break
 
